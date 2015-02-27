@@ -53,6 +53,15 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
         print("text view controller did load\n");
     }
     
+    @IBAction func toggleTokenFolding(sender:AnyObject?) {
+        if let typeSetter = myTextView.layoutManager?.typesetter as? MyATSTypesetter {
+            typeSetter.fold = !typeSetter.fold
+            if let layoutManager = myTextView.layoutManager {
+                layoutManager.invalidateGlyphsForCharacterRange(NSMakeRange(0, layoutManager.textStorage!.length), changeInLength: 0, actualCharacterRange: nil)
+            }
+        }
+    }
+    
     func textDidChange(notification: NSNotification) {
         if currentFile != nil {
             textModified = true
@@ -116,16 +125,31 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
                 return
             }
             text.beginEditing()
-            // convert all foldable text parts into folded text parts
-            text.enumerateAttribute(lineFoldableAttributeName, inRange: NSMakeRange(0, text.length), options: NSAttributedStringEnumerationOptions.allZeros) {
-                value, range, stop in
-                
-                if let actualValue = value as? Bool {
-                    if actualValue {
-                        text.removeAttribute(self.lineFoldableAttributeName, range: range)
-                        text.addAttribute(self.lineFoldedAttributeName, value: true, range: range)
+            
+            // TODO: make a function to avoid writing twice the same code
+            // get old selected range
+            var oldRange = notification.userInfo?.values.first as NSRange
+            if oldRange.location != 0 {
+                oldRange.location -= 1
+                oldRange.length += 1
+            }
+            if NSMaxRange(oldRange) < text.length {
+                oldRange.length += 1
+            }
+            
+            var oldRangeIterator = oldRange.location
+            var oldRangeEnd = NSMaxRange(oldRange)
+            while (oldRangeIterator < oldRangeEnd) {
+                var effectiveRange = NSMakeRange(0, 0)
+                if let value = text.attribute(lineFoldableAttributeName, atIndex: oldRangeIterator, effectiveRange: &effectiveRange) as? Bool {
+                    if value {
+                        text.removeAttribute(lineFoldableAttributeName, range: effectiveRange)
+                        text.addAttribute(lineFoldedAttributeName, value: true, range: effectiveRange)
+                        oldRangeIterator = NSMaxRange(effectiveRange)
+                        continue
                     }
                 }
+                oldRangeIterator++
             }
             
             var ranges = myTextView.selectedRanges as [NSRange]

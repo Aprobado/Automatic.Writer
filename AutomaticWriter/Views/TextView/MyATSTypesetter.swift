@@ -11,6 +11,8 @@ import Cocoa
 // subclass of NSTypesetter to customize the glyphs layout of the textView
 class MyATSTypesetter: NSATSTypesetter {
     
+    var fold:Bool = true
+    
     override func layoutParagraphAtPoint(lineFragmentOrigin: UnsafeMutablePointer<NSPoint>) -> Int {
         //println("that starts the layout")
         
@@ -66,27 +68,31 @@ class MyATSTypesetter: NSATSTypesetter {
             }
             */
             
-            var foldGlyph = NSGlyph(391) // this is the ♦︎ glyph for "Courier new" font
-            
-            var iterator:Int = characterRange.location
-            while (iterator < NSMaxRange(characterRange)) {
-                var foldedRange = NSMakeRange(0, 0)
-                if let value = attributedString?.attribute(lineFoldingAttributeName, atIndex: iterator, effectiveRange: &foldedRange) as? Bool {
-                    if value {
-                        var glyphRange = glyphRangeForCharacterRange(foldedRange, actualCharacterRange: nil)
-                        // first glyph is NSControlGlyph
-                        layoutManager.replaceGlyphAtIndex(glyphRange.location, withGlyph: foldGlyph)
-                        // following glyphs are NSNullGlyphs
-                        if glyphRange.length > 1 {
-                            for var i = glyphRange.location+1; i < NSMaxRange(glyphRange); i++ {
-                                layoutManager.replaceGlyphAtIndex(i, withGlyph: NSGlyph(NSNullGlyph))
+            if fold {
+                
+                var foldGlyph = NSGlyph(391) // this is the ♦︎ glyph for "Courier new" font
+                // TODO: try with an enumerate function to see if it's faster
+                var iterator:Int = characterRange.location
+                while (iterator < NSMaxRange(characterRange)) {
+                    var foldedRange = NSMakeRange(0, 0)
+                    if let value = attributedString?.attribute(lineFoldingAttributeName, atIndex: iterator, effectiveRange: &foldedRange) as? Bool {
+                        if value {
+                            var glyphRange = glyphRangeForCharacterRange(foldedRange, actualCharacterRange: nil)
+                            // first glyph is NSControlGlyph
+                            layoutManager.replaceGlyphAtIndex(glyphRange.location, withGlyph: foldGlyph)
+                            // following glyphs are NSNullGlyphs
+                            if glyphRange.length > 1 {
+                                for var i = glyphRange.location+1; i < NSMaxRange(glyphRange); i++ {
+                                    layoutManager.replaceGlyphAtIndex(i, withGlyph: NSGlyph(NSNullGlyph))
+                                }
                             }
+                            iterator = NSMaxRange(foldedRange)
+                            continue
                         }
-                        iterator = NSMaxRange(foldedRange)
-                        continue
                     }
+                    iterator++
                 }
-                iterator++
+                
             }
             /*
             for i in characterRange.location..<NSMaxRange(characterRange) {

@@ -647,6 +647,12 @@ CA
                                                 <action selector="toggleFullScreen:" target="Ady-hI-5gd" id="01v-Mc-FUH"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="0VJ-C7-Mxr"/>
+                                        <menuItem title="Toggle Token Folding" keyEquivalent="y" id="usg-3p-652">
+                                            <connections>
+                                                <action selector="toggleTokenFolding" target="Ady-hI-5gd" id="re1-4j-eBn"/>
+                                            </connections>
+                                        </menuItem>
                                     </items>
                                 </menu>
                             </menuItem>
