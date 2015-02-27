@@ -118,6 +118,7 @@
                             @"blockquote", @"pre", @"table", @"dl", @"ol", @"ul",
                             @"script", @"noscript", @"form", @"fieldset", @"iframe",
                             @"math", @"ins", @"del", nil];
+    
     NSString *tagName = [scanner nextWord];
     if (![htmlBlockTags containsObject:tagName])
         return nil;
@@ -215,6 +216,7 @@
                             @"blockquote", @"pre", @"table", @"dl", @"ol", @"ul",
                             @"script", @"noscript", @"form", @"fieldset", @"iframe",
                             @"math", @"ins", @"del", nil];
+    
     NSString *tagName = scanner.nextWord;
     if (![htmlBlockTags containsObject:tagName])
         return nil;

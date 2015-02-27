@@ -14,7 +14,7 @@ protocol TextViewControllerDelegate {
     func onFileUnloaded();
 }
 
-class TextViewController: NSViewController, NSTextViewDelegate {
+class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerDelegate {
     
     var delegate:TextViewControllerDelegate?
     
@@ -33,17 +33,29 @@ class TextViewController: NSViewController, NSTextViewDelegate {
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.whiteColor().CGColor
         
-        myTextView.automaticQuoteSubstitutionEnabled = false;
+        myTextView.automaticQuoteSubstitutionEnabled = false
         myTextView.delegate = self
+        //myTextView.layoutManager?.delegate = self
+        //var layoutManager = MyLayoutManager()
+        //layoutManager.typesetter = MyATSTypesetter()
+        //myTextView.textContainer?.replaceLayoutManager(layoutManager)
+        //myTextView.textStorage?.addLayoutManager(layoutManager)
+        
+        if let actualLayoutManager = myTextView.layoutManager {
+            actualLayoutManager.typesetter = MyATSTypesetter()
+            //actualLayoutManager.glyphGenerator = LineFoldingGlyphGenerator(glyphStorage: actualLayoutManager)
+        }
         
         highlighter = Highlighter()
         
         print("text view controller did load\n");
     }
     
+    
+    
     func textDidChange(notification: NSNotification) {
-        if (currentFile != nil) {
-            textModified = true;
+        if currentFile != nil {
+            textModified = true
             
             /*
             if let chars = myTextView.lastKeyEvent?.characters {
@@ -84,11 +96,13 @@ class TextViewController: NSViewController, NSTextViewDelegate {
                 }
                 
                 let range = NSMakeRange(distance(myTextView.string!.startIndex, backwardIndex), distance(backwardIndex, forwardIndex.successor()))
-                highlightText(range)
                 
+                // MARK: -- deactivating highlighting
+                //highlightText(range)
             } else {
                 let range = NSMakeRange(0, countElements(myTextView.string!))
-                highlightText(range)
+                // MARK: -- deactivating highlighting
+                //highlightText(range)
             }
         }
     }
@@ -160,6 +174,7 @@ class TextViewController: NSViewController, NSTextViewDelegate {
         myTextView.textStorage?.font = NSFont(name: "Courier", size: 12)
         
         if filePath.pathExtension == "automat" {
+            // MARK: -- deactivating highlighting
             highlightText(NSMakeRange(0, countElements(text!)))
         }
         
@@ -238,14 +253,19 @@ class TextViewController: NSViewController, NSTextViewDelegate {
         return false
     }
     
+    let lineFoldingAttributeName = "lineFolding"
     // MARK: * visual interface
     func highlightText(range:NSRange) {
         if myTextView.string == nil { return }
         
-        myTextView.setTextColor(NSColor.blackColor(), range: range)
+        //myTextView.setTextColor(NSColor.blackColor(), range: range)
+        myTextView.textStorage?.removeAttribute(lineFoldingAttributeName, range: range)
         
         if let highlights = highlighter?.findHighlightsInRange(range, forText: myTextView.string!) {
             for token in highlights {
+                
+                myTextView.textStorage?.addAttribute(lineFoldingAttributeName, value: true, range: token.ranges[0])
+                /*
                 // NONE, TITLE, IMPORT, TAG, EVENT, TWINE, JS, COMMENT
                 switch token.type {
                 case .TITLE:
@@ -254,6 +274,15 @@ class TextViewController: NSViewController, NSTextViewDelegate {
                     myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
                 case .OPENINGBLOCKTAG, .CLOSINGBLOCKTAG, .OPENINGINLINETAG, .CLOSINGINLINETAG, .EVENT:
                     myTextView.setTextColor(NSColor.redColor(), range: token.ranges[0])
+                    // We could set an attribute to the text from a predefined set of possible attributes
+                    /*
+                    if token.type == .OPENINGBLOCKTAG {
+                        var attrs = [NSObject : AnyObject]()
+                        attrs[NSUnderlineStyleAttributeName] = (NSUnderlineStyleSingle | NSUnderlinePatternDot)
+                        myTextView.textStorage?.setAttributes(attrs, range: token.ranges[0])
+                        //testLayoutManagerUnderlining(token.ranges[0])
+                    }
+                    */
                 case .TWINE:
                     myTextView.setTextColor(NSColor.blueColor(), range: token.ranges[0])
                 case .JS, .JSDECLARATION:
@@ -263,10 +292,24 @@ class TextViewController: NSViewController, NSTextViewDelegate {
                 default:
                     myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
                 }
+                */
             }
         }
     }
-    
+    /*
+    func testLayoutManagerUnderlining(range:NSRange) {
+        // test with NSLayoutManager
+        //let glyphRange = NSMakeRange(range.location, 1)
+        var lineFragGlyphRange:NSRange = NSMakeRange(0, 0)
+        let lineFragRect = myTextView?.layoutManager?.lineFragmentRectForGlyphAtIndex(range.location, effectiveRange: &lineFragGlyphRange)
+        if lineFragRect == nil {
+            println("line fragment rect not found")
+            return
+        }
+        //println(myTextView?.layoutManager)
+        myTextView?.layoutManager?.underlineGlyphRange(range, underlineType: (NSUnderlinePatternSolid | NSUnderlineStyleSingle), lineFragmentRect: lineFragRect!, lineFragmentGlyphRange: lineFragGlyphRange, containerOrigin: myTextView!.textContainerOrigin)
+    }
+    */
     // MARK: * accessor
     func getTextFromTextView() -> String? {
         return myTextView.string

@@ -309,6 +309,7 @@ class ProjectWindowsManager: NSObject, NSWindowDelegate {
         if let window = notification.object as? NSWindow {
             for (index, windowController:ProjectWindowController) in enumerate(windows) {
                 if windowController.window == window {
+                    windowController.myTextViewController?.saveCurrentFile()
                     windows.removeAtIndex(index)
                     break
                 }

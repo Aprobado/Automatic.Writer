@@ -118,6 +118,8 @@ class Parser : NSObject {
         let eventsText = convertEventTokens(events)
         convertedText = textByRemovingTokensFromText(convertedText, tokens: events);
         
+        // TODO: Replace full-text Markdown scan with div-by-div Markdown scn (cf. replaceTagTokensInText)
+        
         // mark down at the end
         convertedText = MMMarkdown.HTMLStringWithMarkdown(convertedText, error: nil)
         
@@ -223,27 +225,79 @@ class Parser : NSObject {
         // $4: closing tag
         // $5: closing tag function attachment
         
+        // retains conversions of tags with ranges.
+        // will be sorted by range.location smaller -> bigger before replacement in text
+        var newTokens = [ConvertibleToken]()
+        
         // first get all the replacing texts before erasing and changing text ranges by doing so
         var replacingTexts = [String]()
         var tempText = text
         for token in tokens {
             let innerTextStart = advance(text.startIndex, token.ranges[1].location + token.ranges[1].length)    // end of opening tag
             let innerTextEnd = advance(text.startIndex, token.ranges[4].location)    // start of closing tag
-            let innerText = text.substringWithRange(Range(start: innerTextStart, end: innerTextEnd))
+            var innerText = text.substringWithRange(Range(start: innerTextStart, end: innerTextEnd))
             let tag = token.type == HighlightType.BLOCKTAG ? "div" : "span"
             let selector = token.captureGroups[2] == "#" ? "id" : "class"
             var function = ""
             if token.captureGroups[5] != "" {
                 function += " \(token.captureGroups[5])"
             }
+            
             let htmlOpeningTag = "<\(tag) \(selector)=\"\(token.captureGroups[3])\"\(function)>"
             let htmlClosingTag = "</\(tag)>"
             replacingTexts += ["\(htmlOpeningTag)\(innerText)\(htmlClosingTag)"]
+            
+            // range is range of text that needs replacement
+            let opType = token.type == HighlightType.BLOCKTAG ? HighlightType.OPENINGBLOCKTAG : HighlightType.OPENINGINLINETAG
+            var openTok = ConvertibleToken(_ranges: [token.ranges[1]], _type: opType, _text: text)
+            let clType = token.type == HighlightType.BLOCKTAG ? HighlightType.CLOSINGBLOCKTAG : HighlightType.CLOSINGINLINETAG
+            var closeTok = ConvertibleToken(_ranges: [token.ranges[4]], _type: clType, _text: text)
+            // capture group is modified to be the text we replace the range with
+            openTok.captureGroups = [htmlOpeningTag]
+            closeTok.captureGroups = [htmlClosingTag]
+            
+            newTokens += [openTok, closeTok]
         }
         
-        // replace occurences of tokens in text by replacing texts. The order is specific and sorted by the highlighter.
-        for (index, token) in enumerate(tokens) {
-            tempText = tempText.stringByReplacingOccurrencesOfString(token.captureGroups[0], withString: replacingTexts[index], options: NSStringCompareOptions.LiteralSearch, range: Range(start: tempText.startIndex, end: tempText.endIndex))
+        newTokens.sort({$0.ranges[0].location < $1.ranges[0].location})
+        var delta = 0
+        
+        // at the same time we're replacing tags, we retain where the divs are to markdown them
+        var divOpenings = [Int]()
+        //var divClosings = [Int]()
+        var pairs = [Pair]() // pair of Int
+        for token in newTokens {
+            let tokenStartLocation = token.ranges[0].location + delta
+            let startRange = advance(tempText.startIndex, tokenStartLocation)
+            let endRange = advance(startRange, token.ranges[0].length)
+            var range = Range<String.Index>(start: startRange, end: endRange)
+            tempText = tempText.stringByReplacingCharactersInRange(range, withString: token.captureGroups[0])
+            
+            delta += countElements(token.captureGroups[0]) - token.ranges[0].length
+            
+            if token.type == HighlightType.OPENINGBLOCKTAG {
+                divOpenings += [token.ranges[0].location + delta + token.ranges[0].length] // get the new opening location+length
+            } else if token.type == HighlightType.CLOSINGBLOCKTAG {
+                let divClosing = tokenStartLocation
+                pairs += [Pair(_a: divOpenings.last!, _b: divClosing)]
+                divOpenings.removeLast()
+            }
+            
+            
+        }
+        var divContents = [String]()
+        for pair in pairs {
+            println(pair)
+            let startRange = advance(tempText.startIndex, pair.a as Int)
+            let endRange = advance(tempText.startIndex, pair.b as Int)
+            divContents += [tempText.substringWithRange(startRange..<endRange)]
+        }
+        
+        divContents = divContents.reverse()
+        for content in divContents {
+            println("\"\(content)\"")
+            let convertedContent = MMMarkdown.HTMLStringWithMarkdown(content, error: nil)
+            tempText = tempText.stringByReplacingOccurrencesOfString(content, withString: convertedContent)
         }
         
         return tempText

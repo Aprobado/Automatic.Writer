@@ -1,3 +1,3 @@
-#titre{Nouvelle histoire}
+#titre{{Nouvelle histoire}}
 
-#introduction{Il était une fois, un héro appelé .hero{Doug}.}
+#introduction{{Il était une fois, un héro appelé .hero{{Doug}}.}}

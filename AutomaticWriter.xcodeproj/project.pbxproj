@@ -13,6 +13,9 @@
 		642824BA1A91F07400578C8D /* TagMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 642824B91A91F07400578C8D /* TagMatch.swift */; };
 		64310B9D1A96340200EE5A6A /* ConvertibleToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64310B9C1A96340200EE5A6A /* ConvertibleToken.swift */; };
 		6459AE8A1A77D12300EF8ABF /* EmptyProject in Resources */ = {isa = PBXBuildFile; fileRef = 6459AE891A77D12300EF8ABF /* EmptyProject */; };
+		64740C6D1A9E6592008EB88E /* LineFoldingGlyphGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64740C6C1A9E6592008EB88E /* LineFoldingGlyphGenerator.swift */; };
+		6483F1CB1A9CC349008C34B4 /* MyATSTypesetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6483F1CA1A9CC349008C34B4 /* MyATSTypesetter.swift */; };
+		6483F1CD1A9CD13A008C34B4 /* MyLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6483F1CC1A9CD13A008C34B4 /* MyLayoutManager.swift */; };
 		64988D6D1A948D8600638A33 /* Highlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64988D6C1A948D8600638A33 /* Highlighter.swift */; };
 		64988D6F1A949CF700638A33 /* HighlightToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64988D6E1A949CF700638A33 /* HighlightToken.swift */; };
 		64A2250C1A6424B50072DE6A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A2250B1A6424B50072DE6A /* AppDelegate.swift */; };
@@ -63,6 +66,9 @@
 		642824B91A91F07400578C8D /* TagMatch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TagMatch.swift; path = AutomatParser/TagMatch.swift; sourceTree = "<group>"; };
 		64310B9C1A96340200EE5A6A /* ConvertibleToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ConvertibleToken.swift; path = AutomatParser/ConvertibleToken.swift; sourceTree = "<group>"; };
 		6459AE891A77D12300EF8ABF /* EmptyProject */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EmptyProject; path = Resources/EmptyProject; sourceTree = "<group>"; };
+		64740C6C1A9E6592008EB88E /* LineFoldingGlyphGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LineFoldingGlyphGenerator.swift; path = Views/TextView/LineFoldingGlyphGenerator.swift; sourceTree = "<group>"; };
+		6483F1CA1A9CC349008C34B4 /* MyATSTypesetter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MyATSTypesetter.swift; path = Views/TextView/MyATSTypesetter.swift; sourceTree = "<group>"; };
+		6483F1CC1A9CD13A008C34B4 /* MyLayoutManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MyLayoutManager.swift; path = Views/TextView/MyLayoutManager.swift; sourceTree = "<group>"; };
 		64988D6C1A948D8600638A33 /* Highlighter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Highlighter.swift; path = AutomatParser/Highlighter.swift; sourceTree = "<group>"; };
 		64988D6E1A949CF700638A33 /* HighlightToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = HighlightToken.swift; path = AutomatParser/HighlightToken.swift; sourceTree = "<group>"; };
 		64A225061A6424B50072DE6A /* AutomaticWriter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutomaticWriter.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -207,6 +213,9 @@
 			isa = PBXGroup;
 			children = (
 				64C403EE1A701E4B00CF7F02 /* MyTextView.swift */,
+				6483F1CA1A9CC349008C34B4 /* MyATSTypesetter.swift */,
+				6483F1CC1A9CD13A008C34B4 /* MyLayoutManager.swift */,
+				64740C6C1A9E6592008EB88E /* LineFoldingGlyphGenerator.swift */,
 			);
 			name = TextView;
 			sourceTree = "<group>";
@@ -408,6 +417,8 @@
 				64988D6D1A948D8600638A33 /* Highlighter.swift in Sources */,
 				64E3C8D11A7B757A00BC51E5 /* Pair.swift in Sources */,
 				642546FB1A65456000E8FD3F /* FileBrowserController.swift in Sources */,
+				6483F1CB1A9CC349008C34B4 /* MyATSTypesetter.swift in Sources */,
+				6483F1CD1A9CD13A008C34B4 /* MyLayoutManager.swift in Sources */,
 				64988D6F1A949CF700638A33 /* HighlightToken.swift in Sources */,
 				64E3C90C1A7BD0CB00BC51E5 /* MMMarkdown.m in Sources */,
 				64E3C90B1A7BD0CB00BC51E5 /* MMHTMLParser.m in Sources */,
@@ -418,6 +429,7 @@
 				64E3C9161A7BEA4E00BC51E5 /* RegexMatch.swift in Sources */,
 				642546F91A6544FD00E8FD3F /* WebViewController.swift in Sources */,
 				64E3C8D31A7B77D600BC51E5 /* Tag.swift in Sources */,
+				64740C6D1A9E6592008EB88E /* LineFoldingGlyphGenerator.swift in Sources */,
 				64E32F581A66725100CED6E8 /* Project.swift in Sources */,
 				64E3C9081A7BD0CB00BC51E5 /* MMDocument.m in Sources */,
 				64D7F6861A6D59CA000F12BE /* FileSystemItem.swift in Sources */,

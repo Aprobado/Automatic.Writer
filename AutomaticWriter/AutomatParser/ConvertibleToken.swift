@@ -9,7 +9,7 @@
 import Foundation
 
 class ConvertibleToken: HighlightToken {
-    let captureGroups:[String]
+    var captureGroups:[String]
     
     init(_ranges: [NSRange], _type: HighlightType, _text:String) {
         captureGroups = [String]()
