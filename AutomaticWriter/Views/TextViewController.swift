@@ -25,6 +25,8 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
     var textModified = false;
     
     var highlighter:Highlighter?
+    let lineFoldedAttributeName = "lineFolding"
+    let lineFoldableAttributeName = "lineFoldable"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,11 +53,11 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
         print("text view controller did load\n");
     }
     
-    
-    
     func textDidChange(notification: NSNotification) {
         if currentFile != nil {
             textModified = true
+            
+            // MARK: disable text did change notification by returning
             
             /*
             if let chars = myTextView.lastKeyEvent?.characters {
@@ -98,12 +100,58 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
                 let range = NSMakeRange(distance(myTextView.string!.startIndex, backwardIndex), distance(backwardIndex, forwardIndex.successor()))
                 
                 // MARK: -- deactivating highlighting
-                //highlightText(range)
+                highlightText(range)
             } else {
                 let range = NSMakeRange(0, countElements(myTextView.string!))
                 // MARK: -- deactivating highlighting
-                //highlightText(range)
+                highlightText(range)
             }
+        }
+    }
+    
+    // textviewdelegation
+    func textViewDidChangeSelection(notification: NSNotification) {
+        if let text = myTextView.textStorage {
+            if text.length < 2 {
+                return
+            }
+            text.beginEditing()
+            // convert all foldable text parts into folded text parts
+            text.enumerateAttribute(lineFoldableAttributeName, inRange: NSMakeRange(0, text.length), options: NSAttributedStringEnumerationOptions.allZeros) {
+                value, range, stop in
+                
+                if let actualValue = value as? Bool {
+                    if actualValue {
+                        text.removeAttribute(self.lineFoldableAttributeName, range: range)
+                        text.addAttribute(self.lineFoldedAttributeName, value: true, range: range)
+                    }
+                }
+            }
+            
+            var ranges = myTextView.selectedRanges as [NSRange]
+            if ranges[0].location != 0 {
+                ranges[0].location -= 1
+                ranges[0].length += 1
+            }
+            if NSMaxRange(ranges[0]) < text.length {
+                ranges[0].length += 1
+            }
+            
+            var rangeIterator = ranges[0].location
+            var rangeEnd = NSMaxRange(ranges[0])
+            while (rangeIterator < rangeEnd) {
+                var effectiveRange = NSMakeRange(0, 0)
+                if let value = text.attribute(lineFoldedAttributeName, atIndex: rangeIterator, effectiveRange: &effectiveRange) as? Bool {
+                    if value {
+                        text.removeAttribute(lineFoldedAttributeName, range: effectiveRange)
+                        text.addAttribute(lineFoldableAttributeName, value: true, range: effectiveRange)
+                        rangeIterator = NSMaxRange(effectiveRange)
+                        continue
+                    }
+                }
+                rangeIterator++
+            }
+            text.endEditing()
         }
     }
     
@@ -169,9 +217,9 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
             return false
         }
         // set font of text view
-        myTextView.font = NSFont(name: "Courier", size: 12)
+        myTextView.font = NSFont(name: "Courier New", size: 12)
         // and of text storage
-        myTextView.textStorage?.font = NSFont(name: "Courier", size: 12)
+        myTextView.textStorage?.font = NSFont(name: "Courier New", size: 12)
         
         if filePath.pathExtension == "automat" {
             // MARK: -- deactivating highlighting
@@ -253,47 +301,56 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
         return false
     }
     
-    let lineFoldingAttributeName = "lineFolding"
+    
     // MARK: * visual interface
     func highlightText(range:NSRange) {
         if myTextView.string == nil { return }
         
-        //myTextView.setTextColor(NSColor.blackColor(), range: range)
-        myTextView.textStorage?.removeAttribute(lineFoldingAttributeName, range: range)
-        
-        if let highlights = highlighter?.findHighlightsInRange(range, forText: myTextView.string!) {
-            for token in highlights {
-                
-                myTextView.textStorage?.addAttribute(lineFoldingAttributeName, value: true, range: token.ranges[0])
-                /*
-                // NONE, TITLE, IMPORT, TAG, EVENT, TWINE, JS, COMMENT
-                switch token.type {
-                case .TITLE:
-                    myTextView.setTextColor(NSColor.greenColor(), range: token.ranges[0])
-                case .CSSIMPORT, .JSIMPORT:
-                    myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
-                case .OPENINGBLOCKTAG, .CLOSINGBLOCKTAG, .OPENINGINLINETAG, .CLOSINGINLINETAG, .EVENT:
-                    myTextView.setTextColor(NSColor.redColor(), range: token.ranges[0])
-                    // We could set an attribute to the text from a predefined set of possible attributes
-                    /*
-                    if token.type == .OPENINGBLOCKTAG {
-                        var attrs = [NSObject : AnyObject]()
-                        attrs[NSUnderlineStyleAttributeName] = (NSUnderlineStyleSingle | NSUnderlinePatternDot)
-                        myTextView.textStorage?.setAttributes(attrs, range: token.ranges[0])
-                        //testLayoutManagerUnderlining(token.ranges[0])
+        if let text = myTextView.textStorage {
+            text.beginEditing()
+            
+            //myTextView.setTextColor(NSColor.blackColor(), range: range)
+            text.addAttribute(NSForegroundColorAttributeName, value: NSColor.blackColor(), range: range)
+            text.removeAttribute(lineFoldedAttributeName, range: range)
+            text.removeAttribute(lineFoldableAttributeName, range: range)
+            
+            if let highlights = highlighter?.findHighlightsInRange(range, forText: myTextView.string!) {
+                for token in highlights {
+                    if NSLocationInRange(myTextView.selectedRange().location, token.ranges[0]) {
+                        text.addAttribute(lineFoldableAttributeName, value: true, range: token.ranges[0])
                     }
-                    */
-                case .TWINE:
-                    myTextView.setTextColor(NSColor.blueColor(), range: token.ranges[0])
-                case .JS, .JSDECLARATION:
-                    myTextView.setTextColor(NSColor.magentaColor(), range: token.ranges[0])
-                case .COMMENT:
-                    myTextView.setTextColor(NSColor.grayColor(), range: token.ranges[0])
-                default:
-                    myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
+                    
+                    text.addAttribute(lineFoldedAttributeName, value: true, range: token.ranges[0])
+                    
+                    // NONE, TITLE, IMPORT, TAG, EVENT, TWINE, JS, COMMENT
+                    switch token.type {
+                    case .TITLE:
+                        //myTextView.setTextColor(NSColor.greenColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.greenColor(), range: token.ranges[0])
+                    case .CSSIMPORT, .JSIMPORT:
+                        //myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.orangeColor(), range: token.ranges[0])
+                    case .OPENINGBLOCKTAG, .CLOSINGBLOCKTAG, .OPENINGINLINETAG, .CLOSINGINLINETAG, .EVENT:
+                        //myTextView.setTextColor(NSColor.redColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.redColor(), range: token.ranges[0])
+                    case .TWINE:
+                        //myTextView.setTextColor(NSColor.blueColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.blueColor(), range: token.ranges[0])
+                    case .JS, .JSDECLARATION:
+                        //myTextView.setTextColor(NSColor.magentaColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.magentaColor(), range: token.ranges[0])
+                    case .COMMENT:
+                        //myTextView.setTextColor(NSColor.grayColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.grayColor(), range: token.ranges[0])
+                    default:
+                        //myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.orangeColor(), range: token.ranges[0])
+                    }
+                    
                 }
-                */
             }
+            
+            text.endEditing()
         }
     }
     /*

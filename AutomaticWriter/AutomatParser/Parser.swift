@@ -118,8 +118,6 @@ class Parser : NSObject {
         let eventsText = convertEventTokens(events)
         convertedText = textByRemovingTokensFromText(convertedText, tokens: events);
         
-        // TODO: Replace full-text Markdown scan with div-by-div Markdown scn (cf. replaceTagTokensInText)
-        
         // mark down at the end
         convertedText = MMMarkdown.HTMLStringWithMarkdown(convertedText, error: nil)
         
@@ -229,23 +227,20 @@ class Parser : NSObject {
         // will be sorted by range.location smaller -> bigger before replacement in text
         var newTokens = [ConvertibleToken]()
         
-        // first get all the replacing texts before erasing and changing text ranges by doing so
-        var replacingTexts = [String]()
         var tempText = text
         for token in tokens {
-            let innerTextStart = advance(text.startIndex, token.ranges[1].location + token.ranges[1].length)    // end of opening tag
-            let innerTextEnd = advance(text.startIndex, token.ranges[4].location)    // start of closing tag
-            var innerText = text.substringWithRange(Range(start: innerTextStart, end: innerTextEnd))
+            // get the string bits we need
             let tag = token.type == HighlightType.BLOCKTAG ? "div" : "span"
             let selector = token.captureGroups[2] == "#" ? "id" : "class"
+            let name = token.captureGroups[3]
             var function = ""
             if token.captureGroups[5] != "" {
                 function += " \(token.captureGroups[5])"
             }
             
-            let htmlOpeningTag = "<\(tag) \(selector)=\"\(token.captureGroups[3])\"\(function)>"
+            // create the opening and closing tags
+            let htmlOpeningTag = "<\(tag) \(selector)=\"\(name)\"\(function)>"
             let htmlClosingTag = "</\(tag)>"
-            replacingTexts += ["\(htmlOpeningTag)\(innerText)\(htmlClosingTag)"]
             
             // range is range of text that needs replacement
             let opType = token.type == HighlightType.BLOCKTAG ? HighlightType.OPENINGBLOCKTAG : HighlightType.OPENINGINLINETAG
@@ -259,13 +254,14 @@ class Parser : NSObject {
             newTokens += [openTok, closeTok]
         }
         
+        // sort the tokens to replace them one after the other in location order
         newTokens.sort({$0.ranges[0].location < $1.ranges[0].location})
         var delta = 0
         
-        // at the same time we're replacing tags, we retain where the divs are to markdown them
-        var divOpenings = [Int]()
-        //var divClosings = [Int]()
-        var pairs = [Pair]() // pair of Int
+        // at the same time we're replacing tags, we retain where the divs are to convert their innerText markdown
+        var divOpenings = [Int]() // location of div openings
+        var pairs = [Pair]()    // pairs of Ints with start.location and end.location of what's INSIDE a <div> tag
+                                // the loop enters the divs inner first, outer last in the pairs
         for token in newTokens {
             let tokenStartLocation = token.ranges[0].location + delta
             let startRange = advance(tempText.startIndex, tokenStartLocation)
@@ -282,9 +278,9 @@ class Parser : NSObject {
                 pairs += [Pair(_a: divOpenings.last!, _b: divClosing)]
                 divOpenings.removeLast()
             }
-            
-            
         }
+        
+        // get the innerText of each div
         var divContents = [String]()
         for pair in pairs {
             println(pair)
@@ -293,13 +289,15 @@ class Parser : NSObject {
             divContents += [tempText.substringWithRange(startRange..<endRange)]
         }
         
+        // reverse the order to have outer first, inner last
         divContents = divContents.reverse()
         for content in divContents {
-            println("\"\(content)\"")
+            // replace content by a markdown converted content
             let convertedContent = MMMarkdown.HTMLStringWithMarkdown(content, error: nil)
             tempText = tempText.stringByReplacingOccurrencesOfString(content, withString: convertedContent)
         }
         
+        // return the modified text
         return tempText
     }
     
