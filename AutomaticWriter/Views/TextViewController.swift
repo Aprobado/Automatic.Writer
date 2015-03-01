@@ -126,56 +126,45 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
             }
             text.beginEditing()
             
-            // TODO: make a function to avoid writing twice the same code
             // get old selected range
             var oldRange = notification.userInfo?.values.first as NSRange
-            if oldRange.location != 0 {
-                oldRange.location -= 1
-                oldRange.length += 1
-            }
-            if NSMaxRange(oldRange) < text.length {
-                oldRange.length += 1
-            }
-            
-            var oldRangeIterator = oldRange.location
-            var oldRangeEnd = NSMaxRange(oldRange)
-            while (oldRangeIterator < oldRangeEnd) {
-                var effectiveRange = NSMakeRange(0, 0)
-                if let value = text.attribute(lineFoldableAttributeName, atIndex: oldRangeIterator, effectiveRange: &effectiveRange) as? Bool {
-                    if value {
-                        text.removeAttribute(lineFoldableAttributeName, range: effectiveRange)
-                        text.addAttribute(lineFoldedAttributeName, value: true, range: effectiveRange)
-                        oldRangeIterator = NSMaxRange(effectiveRange)
-                        continue
-                    }
-                }
-                oldRangeIterator++
+            if NSMaxRange(oldRange) < text.length { // when we load a new file, the old range can be out of bounds.
+                removeAttribute(lineFoldableAttributeName, andAdd: lineFoldedAttributeName, touchingRange: oldRange, inTextStorage: text)
             }
             
             var ranges = myTextView.selectedRanges as [NSRange]
-            if ranges[0].location != 0 {
-                ranges[0].location -= 1
-                ranges[0].length += 1
-            }
-            if NSMaxRange(ranges[0]) < text.length {
-                ranges[0].length += 1
-            }
+            println("new selection: \(ranges[0])")
+            removeAttribute(lineFoldedAttributeName, andAdd: lineFoldableAttributeName, touchingRange: ranges[0], inTextStorage: text)
             
-            var rangeIterator = ranges[0].location
-            var rangeEnd = NSMaxRange(ranges[0])
-            while (rangeIterator < rangeEnd) {
-                var effectiveRange = NSMakeRange(0, 0)
-                if let value = text.attribute(lineFoldedAttributeName, atIndex: rangeIterator, effectiveRange: &effectiveRange) as? Bool {
-                    if value {
-                        text.removeAttribute(lineFoldedAttributeName, range: effectiveRange)
-                        text.addAttribute(lineFoldableAttributeName, value: true, range: effectiveRange)
-                        rangeIterator = NSMaxRange(effectiveRange)
-                        continue
-                    }
-                }
-                rangeIterator++
-            }
             text.endEditing()
+        }
+    }
+    
+    func removeAttribute(attributeRemoved:String, andAdd attributeAdded:String, touchingRange range:NSRange, inTextStorage text:NSTextStorage) {
+        // the range is adjusted to test one character before the selection a|b
+        // testing "a" as well as "b", "|" being the selection point
+        var adjustedRange = range
+        if adjustedRange.location != 0 {
+            adjustedRange.location -= 1
+            adjustedRange.length += 1
+        }
+        if NSMaxRange(adjustedRange) < text.length {
+            adjustedRange.length += 1
+        }
+        
+        var rangeIterator = adjustedRange.location
+        var rangeEnd = NSMaxRange(adjustedRange)
+        while (rangeIterator < rangeEnd) {
+            var effectiveRange = NSMakeRange(0, 0)
+            if let value = text.attribute(attributeRemoved, atIndex: rangeIterator, effectiveRange: &effectiveRange) as? Bool {
+                if value {
+                    text.removeAttribute(attributeRemoved, range: effectiveRange)
+                    text.addAttribute(attributeAdded, value: true, range: effectiveRange)
+                    rangeIterator = NSMaxRange(effectiveRange)
+                    continue
+                }
+            }
+            rangeIterator++
         }
     }
     
@@ -340,11 +329,10 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
             
             if let highlights = highlighter?.findHighlightsInRange(range, forText: myTextView.string!) {
                 for token in highlights {
+                    var attributeName = lineFoldedAttributeName
                     if NSLocationInRange(myTextView.selectedRange().location, token.ranges[0]) {
-                        text.addAttribute(lineFoldableAttributeName, value: true, range: token.ranges[0])
+                        attributeName = lineFoldableAttributeName
                     }
-                    
-                    text.addAttribute(lineFoldedAttributeName, value: true, range: token.ranges[0])
                     
                     // NONE, TITLE, IMPORT, TAG, EVENT, TWINE, JS, COMMENT
                     switch token.type {
@@ -354,15 +342,26 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
                     case .CSSIMPORT, .JSIMPORT:
                         //myTextView.setTextColor(NSColor.orangeColor(), range: token.ranges[0])
                         text.addAttribute(NSForegroundColorAttributeName, value: NSColor.orangeColor(), range: token.ranges[0])
-                    case .OPENINGBLOCKTAG, .CLOSINGBLOCKTAG, .OPENINGINLINETAG, .CLOSINGINLINETAG, .EVENT:
+                    case .EVENT:
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.redColor(), range: token.ranges[0])
+                    case .OPENINGBLOCKTAG, .CLOSINGBLOCKTAG, .OPENINGINLINETAG, .CLOSINGINLINETAG:
                         //myTextView.setTextColor(NSColor.redColor(), range: token.ranges[0])
                         text.addAttribute(NSForegroundColorAttributeName, value: NSColor.redColor(), range: token.ranges[0])
+                        text.addAttribute(attributeName, value: true, range: token.ranges[0])
                     case .TWINE:
                         //myTextView.setTextColor(NSColor.blueColor(), range: token.ranges[0])
                         text.addAttribute(NSForegroundColorAttributeName, value: NSColor.blueColor(), range: token.ranges[0])
-                    case .JS, .JSDECLARATION:
+                        text.addAttribute(attributeName, value: true, range: token.ranges[2])
+                        text.addAttribute(attributeName, value: true, range: token.ranges[3])
+                    case .JS:
+                        text.addAttribute(NSForegroundColorAttributeName, value: NSColor.magentaColor(), range: token.ranges[0])
+                    case .JSDECLARATION:
                         //myTextView.setTextColor(NSColor.magentaColor(), range: token.ranges[0])
                         text.addAttribute(NSForegroundColorAttributeName, value: NSColor.magentaColor(), range: token.ranges[0])
+                        if token.ranges.count > 3 {
+                            let startRange = NSMaxRange(token.ranges[1]) - 1
+                            text.addAttribute(attributeName, value: true, range: NSMakeRange(startRange, NSMaxRange(token.ranges[0]) - startRange))
+                        }
                     case .COMMENT:
                         //myTextView.setTextColor(NSColor.grayColor(), range: token.ranges[0])
                         text.addAttribute(NSForegroundColorAttributeName, value: NSColor.grayColor(), range: token.ranges[0])
@@ -377,6 +376,7 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
             text.endEditing()
         }
     }
+    
     /*
     func testLayoutManagerUnderlining(range:NSRange) {
         // test with NSLayoutManager
