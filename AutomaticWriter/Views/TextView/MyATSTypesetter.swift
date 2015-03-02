@@ -33,9 +33,9 @@ class MyATSTypesetter: NSATSTypesetter {
     override func layoutCharactersInRange(characterRange: NSRange,
         forLayoutManager layoutManager: NSLayoutManager,
         maximumNumberOfLineFragments maxNumLines: Int) -> NSRange {
-            /*
-            println("\(NSDate()) | received demand to layout range \(characterRange)")
             
+            //println("\(self.className): received demand to layout range \(characterRange) with max num lines \(maxNumLines)")
+            /*
             var firstLetterIsFolded = false
             var foldedRange:NSRange = NSMakeRange(0, 0)
             if let value = attributedString?.attribute(lineFoldingAttributeName, atIndex: characterRange.location, effectiveRange: &foldedRange) as? Bool {
@@ -69,11 +69,27 @@ class MyATSTypesetter: NSATSTypesetter {
             */
             
             if fold {
+                var controlPointEncountered = 0
                 
                 var foldGlyph = NSGlyph(391) // this is the ♦︎ glyph for "Courier new" font
                 // TODO: try with an enumerate function to see if it's faster
                 var iterator:Int = characterRange.location
-                while (iterator < NSMaxRange(characterRange)) {
+                
+                while iterator < NSMaxRange(characterRange) {
+                    let glyphIndex = layoutManager.glyphIndexForCharacterAtIndex(iterator)
+                    let glyph = layoutManager.glyphAtIndex(glyphIndex)
+                    if glyph == NSGlyph(NSControlGlyph) {
+                        // the super.layoutCharacterInRange will break when maxNumLines is equal to
+                        // the number of NSControlGlyph AND layout line breaks due to the container width
+                        // TODO: add checking for line width
+                        // we break so we don't process glyph switching for nothing
+                        controlPointEncountered++
+                        if controlPointEncountered >= maxNumLines {
+                            //println("\(self.className): breaking at character \(iterator)")
+                            break
+                        }
+                    }
+                    
                     var foldedRange = NSMakeRange(0, 0)
                     if let value = attributedString?.attribute(lineFoldingAttributeName, atIndex: iterator, effectiveRange: &foldedRange) as? Bool {
                         if value {
@@ -92,6 +108,8 @@ class MyATSTypesetter: NSATSTypesetter {
                     }
                     iterator++
                 }
+                
+                //println("\(self.className): my algo processed \(iterator + 1 - characterRange.location) characters")
                 
             }
             /*
@@ -119,6 +137,8 @@ class MyATSTypesetter: NSATSTypesetter {
             //println("\(NSDate()) | layout character in range \(characterRange) with max nb of line: \(maxNumLines)")
             
             let processedRange = super.layoutCharactersInRange(characterRange, forLayoutManager: layoutManager, maximumNumberOfLineFragments: maxNumLines)
+           
+            //println("\(self.className): processed range is \(processedRange), last char is \(NSMaxRange(processedRange)-1)")
             
             //println("\(NSDate()) | processed range: \(processedRange)")
             

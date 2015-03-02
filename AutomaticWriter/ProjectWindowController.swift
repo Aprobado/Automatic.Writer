@@ -13,6 +13,8 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
     var myFileBrowserController : FileBrowserController?
     var myTextViewController : TextViewController?
     var myWebViewController : WebViewController?
+    var htmlViewController : TextViewController?
+    var htmlShouldBeVisible : Bool = false
     
     var project : Project?
     var mySplitView : NSSplitView?
@@ -50,8 +52,13 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
                 myFileBrowserController = storyboard.instantiateControllerWithIdentifier("FileBrowserController") as FileBrowserController?
                 myTextViewController = storyboard.instantiateControllerWithIdentifier("TextViewController") as TextViewController?
                 myWebViewController = storyboard.instantiateControllerWithIdentifier("WebViewController") as WebViewController?
+                htmlViewController = storyboard.instantiateControllerWithIdentifier("TextViewController") as TextViewController?
                 
-                if myFileBrowserController == nil || myTextViewController == nil || myWebViewController == nil {
+                if  myFileBrowserController == nil ||
+                    myTextViewController == nil ||
+                    myWebViewController == nil ||
+                    htmlViewController == nil {
+                        
                     println("can't setup views properly")
                     return
                 }
@@ -71,11 +78,20 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
                 // set web view
                 splitView.addSubview(myWebViewController!.view)
                 
-                splitView.adjustSubviews()
+                splitView.addSubview(htmlViewController!.view)
+                htmlViewController!.myTextView.editable = false
+                
+                //splitView.adjustSubviews()
                 let positionZero:CGFloat = 200
-                let positionOne = ((splitView.frame.width - 200) / 2) + 200
                 splitView.setPosition(positionZero, ofDividerAtIndex: 0)
+                splitView.adjustSubviews()
+                showTextAndPreviewViews()
+                /*
+                let positionOne = ((splitView.frame.width - 200) / 2) + 200
+                let positionTwo = splitView.frame.width
                 splitView.setPosition(positionOne, ofDividerAtIndex: 1)
+                splitView.setPosition(positionTwo, ofDividerAtIndex: 2)
+                */
             }
         }
     }
@@ -136,7 +152,13 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
                 let htmlPath = AutomatFileManager.getHtmlFileOfAutomatFileAtPath(path)
                 if let actualHtmlPath = htmlPath {
                     myWebViewController?.loadFile(actualHtmlPath)
+                    htmlViewController?.loadTextFromFile(actualHtmlPath)
+                    if htmlShouldBeVisible {
+                        showHtmlView()
+                    }
                 }
+            } else {
+                hideHtmlView()
             }
             if let myWindow = window {
                 if let myProject = project {
@@ -155,6 +177,9 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
     func onFileSaved() {
         if let webView = myWebViewController {
             webView.reload()
+        }
+        if let htmlController = htmlViewController {
+            htmlController.fileCheck()
         }
     }
     
@@ -285,10 +310,26 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
     @IBAction func toggleWebView(sender:AnyObject?) {
         if let splitView = mySplitView {
             if let webViewController = myWebViewController {
-                if splitView.isSubviewCollapsed(webViewController.view) {
+                if let htmlController = htmlViewController {
+                    if splitView.isSubviewCollapsed(webViewController.view) {
+                        if splitView.isSubviewCollapsed(htmlController.view) {
+                            showTextAndPreviewViews()
+                        } else {
+                            showThreeViews()
+                        }
+                    } else {
+                        if splitView.isSubviewCollapsed(htmlController.view) {
+                            splitView.setPosition(splitView.frame.width, ofDividerAtIndex: 2)
+                            splitView.setPosition(splitView.frame.width, ofDividerAtIndex: 1)
+                        } else {
+                            showTextAndHtmlViews()
+                        }
+                    }
+                }
+                    /*
                     var browserWidth : CGFloat = 0
                     if let fileBrowserController = myFileBrowserController {
-                        browserWidth = splitView.isSubviewCollapsed(fileBrowserController.view) ? 0 : splitView.subviews[0].frame.width
+                    browserWidth = splitView.isSubviewCollapsed(fileBrowserController.view) ? 0 : splitView.subviews[0].frame.width
                     }
                     let position = (splitView.subviews[1].frame.width / 2) + browserWidth
                     splitView.setPosition(position, ofDividerAtIndex: 1)
@@ -304,7 +345,90 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
                     }
                     
                 }
+                */
             }
+        }
+    }
+    
+    @IBAction func toggleHtmlView(sender:AnyObject?) {
+        htmlShouldBeVisible = !htmlShouldBeVisible
+        if htmlShouldBeVisible {
+            showHtmlView()
+        } else {
+            hideHtmlView()
+        }
+    }
+    
+    func showHtmlView() {
+        if let splitView = mySplitView {
+            if let htmlController = htmlViewController {
+                if let webViewController = myWebViewController {
+                    if splitView.isSubviewCollapsed(webViewController.view) {
+                        showTextAndHtmlViews()
+                    } else {
+                        showThreeViews()
+                    }
+                }
+            }
+        }
+    }
+    func hideHtmlView() {
+        if let splitView = mySplitView {
+            if let htmlController = htmlViewController {
+                if let webViewController = myWebViewController {
+                    if splitView.isSubviewCollapsed(webViewController.view) {
+                        splitView.setPosition(splitView.frame.width, ofDividerAtIndex: 2)
+                        splitView.setPosition(splitView.frame.width, ofDividerAtIndex: 1)
+                    } else {
+                        showTextAndPreviewViews()
+                    }
+                }
+            }
+        }
+    }
+    
+    func showTextAndPreviewViews() {
+        if let splitView = mySplitView {
+        var positionZero:CGFloat = 0
+            if let fileBrowserController = myFileBrowserController {
+                positionZero = splitView.isSubviewCollapsed(fileBrowserController.view) ? 0 : splitView.subviews[0].frame.width
+            }
+            let widthPerView = (splitView.frame.width - positionZero) / 2
+            let positionOne = widthPerView + positionZero
+            let positionTwo = splitView.frame.width
+            splitView.setPosition(positionZero, ofDividerAtIndex: 0)
+            splitView.setPosition(positionOne, ofDividerAtIndex: 1)
+            splitView.setPosition(positionTwo, ofDividerAtIndex: 2)
+        }
+    }
+    
+    func showTextAndHtmlViews() {
+        if let splitView = mySplitView {
+            var positionZero:CGFloat = 0
+            if let fileBrowserController = myFileBrowserController {
+                positionZero = splitView.isSubviewCollapsed(fileBrowserController.view) ? 0 : splitView.subviews[0].frame.width
+            }
+            let widthPerView = (splitView.frame.width - positionZero) / 2
+            let positionOne = widthPerView + positionZero
+            let positionTwo = widthPerView + positionZero
+            splitView.setPosition(positionZero, ofDividerAtIndex: 0)
+            splitView.setPosition(positionOne, ofDividerAtIndex: 1)
+            splitView.setPosition(positionTwo, ofDividerAtIndex: 2)
+        }
+    }
+    
+    func showThreeViews() {
+        if let splitView = mySplitView {
+            var positionZero:CGFloat = 0
+            if let fileBrowserController = myFileBrowserController {
+                positionZero = splitView.isSubviewCollapsed(fileBrowserController.view) ? 0 : splitView.subviews[0].frame.width
+            }
+            let widthPerView = (splitView.frame.width - positionZero) / 3
+            let positionOne = widthPerView + positionZero
+            let positionTwo = widthPerView * 2 + positionZero
+            splitView.setPosition(positionZero, ofDividerAtIndex: 0)
+            splitView.setPosition(positionOne, ofDividerAtIndex: 1)
+            splitView.setPosition(positionTwo, ofDividerAtIndex: 2)
         }
     }
     

@@ -640,6 +640,12 @@ CA
                                                 <action selector="toggleWebView:" target="Ady-hI-5gd" id="yDL-uk-3uy"/>
                                             </connections>
                                         </menuItem>
+                                        <menuItem title="Show/Hide Source" keyEquivalent="u" id="jWR-IE-NgN">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                            <connections>
+                                                <action selector="toggleHtmlView:" target="Ady-hI-5gd" id="Gp7-4n-n6C"/>
+                                            </connections>
+                                        </menuItem>
                                         <menuItem isSeparatorItem="YES" id="2gR-DZ-akb"/>
                                         <menuItem title="Enter Full Screen" keyEquivalent="f" id="BtP-kR-v36">
                                             <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
@@ -844,9 +850,9 @@ CA
                                                             <rect key="frame" x="1" y="1" width="184" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hKy-vs-dtF" customClass="MyTextField" customModule="AutomaticWriter" customModuleProvider="target">
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hKy-vs-dtF">
                                                                     <rect key="frame" x="0.0" y="0.0" width="190" height="17"/>
-                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="bqN-6U-tfJ">
+                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" title="Table View Cell" id="bqN-6U-tfJ">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -911,7 +917,7 @@ CA
                                     <rect key="frame" x="1" y="1" width="223" height="133"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textView importsGraphics="NO" findStyle="panel" continuousSpellChecking="YES" allowsUndo="YES" usesRuler="YES" usesFontPanel="YES" verticallyResizable="YES" allowsNonContiguousLayout="YES" quoteSubstitution="YES" dashSubstitution="YES" spellingCorrection="YES" smartInsertDelete="YES" id="R8B-Dl-zdv" customClass="MyTextView" customModule="AutomaticWriter" customModuleProvider="target">
+                                        <textView importsGraphics="NO" findStyle="panel" allowsUndo="YES" usesRuler="YES" usesFontPanel="YES" verticallyResizable="YES" allowsNonContiguousLayout="YES" quoteSubstitution="YES" dashSubstitution="YES" smartInsertDelete="YES" id="R8B-Dl-zdv" customClass="MyTextView" customModule="AutomaticWriter" customModuleProvider="target">
                                             <rect key="frame" x="0.0" y="0.0" width="223" height="298"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>

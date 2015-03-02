@@ -109,8 +109,12 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
                 let range = NSMakeRange(distance(myTextView.string!.startIndex, backwardIndex), distance(backwardIndex, forwardIndex.successor()))
                 
                 // MARK: -- deactivating highlighting
+                //println("\(self.className): ================================")
+                //println("\(self.className): highlight for range \(range)")
                 highlightText(range)
             } else {
+                //println("\(self.className): ================================")
+                //println("\(self.className): highlight for whole file")
                 let range = NSMakeRange(0, countElements(myTextView.string!))
                 // MARK: -- deactivating highlighting
                 highlightText(range)
@@ -129,11 +133,14 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
             // get old selected range
             var oldRange = notification.userInfo?.values.first as NSRange
             if NSMaxRange(oldRange) < text.length { // when we load a new file, the old range can be out of bounds.
+                //println("\(self.className): ================================")
+                //println("\(self.className): remove foldable and add folded attribute in range \(oldRange)")
                 removeAttribute(lineFoldableAttributeName, andAdd: lineFoldedAttributeName, touchingRange: oldRange, inTextStorage: text)
             }
             
             var ranges = myTextView.selectedRanges as [NSRange]
-            println("new selection: \(ranges[0])")
+            //println("\(self.className): ================================")
+            //println("\(self.className): remove folded and add foldable attribute in range \(ranges[0])")
             removeAttribute(lineFoldedAttributeName, andAdd: lineFoldableAttributeName, touchingRange: ranges[0], inTextStorage: text)
             
             text.endEditing()
@@ -236,6 +243,8 @@ class TextViewController: NSViewController, NSTextViewDelegate, NSLayoutManagerD
         
         if filePath.pathExtension == "automat" {
             // MARK: -- deactivating highlighting
+            //println("\(self.className): ================================")
+            //println("\(self.className): highlight from loading file")
             highlightText(NSMakeRange(0, countElements(text!)))
         }
         

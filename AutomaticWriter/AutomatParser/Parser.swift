@@ -283,7 +283,7 @@ class Parser : NSObject {
         // get the innerText of each div
         var divContents = [String]()
         for pair in pairs {
-            println(pair)
+            //println("\(self.className()) : \(pair)")
             let startRange = advance(tempText.startIndex, pair.a as Int)
             let endRange = advance(tempText.startIndex, pair.b as Int)
             divContents += [tempText.substringWithRange(startRange..<endRange)]
