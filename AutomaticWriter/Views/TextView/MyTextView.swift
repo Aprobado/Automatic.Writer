@@ -17,15 +17,15 @@ class MyTextView: NSTextView {
 
         // Drawing code here.
     }
-    /*
+    
     override func becomeFirstResponder() -> Bool {
         println("a \(self.className) became first responder")
         if let nextView = self.nextKeyView {
-            println("next is \(nextView.superview?.superview?.superview?.superview)")
+            println("next is \(nextView)")
         }
+        println("selection: \(selectedRange())")
         return true
     }
-    */
     
     override func keyDown(theEvent: NSEvent) {
         lastKeyEvent = theEvent

@@ -461,7 +461,7 @@ class AutomatFileManager: NSObject {
     // ==================================================================
     // MARK: * File Modification
     
-    class func renameFile(filePath:String, to fileName:String) {
+    class func renameFile(filePath:String, to fileName:String) -> Bool {
         // when renaming we can't add path component, so avoid "/"
         var newName = fileName.stringByReplacingOccurrencesOfString("/", withString: "")
         
@@ -476,7 +476,7 @@ class AutomatFileManager: NSObject {
         if NSFileManager.defaultManager().fileExistsAtPath(newPath) {
             // TODO: show an alert?
             println("can't change name to an existing name")
-            return;
+            return false
         }
         
         // if it's an automat file, modify the corresponding html file as well
@@ -485,13 +485,13 @@ class AutomatFileManager: NSObject {
             let htmlNewFilePath = getHtmlFileOfAutomatFileAtPath(newPath)
             if htmlFilePath == nil || htmlNewFilePath == nil {
                 println("couldn't retrieve html file path from automat file path")
-                return
+                return false
             }
             
             if NSFileManager.defaultManager().fileExistsAtPath(htmlNewFilePath!) {
                 // TODO: show an alert?
                 println("an html with that name already exists")
-                return;
+                return false
             }
             
             // modifiy html name by moving the file
@@ -499,6 +499,7 @@ class AutomatFileManager: NSObject {
             NSFileManager.defaultManager().moveItemAtPath(htmlFilePath!, toPath: htmlNewFilePath!, error: &error)
             if let actualError = error {
                 println("Error while moving file: \(actualError)")
+                return false
             }
         }
         
@@ -511,12 +512,12 @@ class AutomatFileManager: NSObject {
                     let automatNewFilePath = getAutomatFileOfHtmlFileAtPath(newPath)
                     if automatNewFilePath == nil {
                         println("couldn't retrieve automat file path from html new file path")
-                        return
+                        return false
                     }
                     if NSFileManager.defaultManager().fileExistsAtPath(automatNewFilePath!) {
                         // TODO: show an alert?
                         println("an automat file with that name already exists")
-                        return;
+                        return false
                     }
                     
                     // modifiy automat name by moving the file
@@ -524,6 +525,7 @@ class AutomatFileManager: NSObject {
                     NSFileManager.defaultManager().moveItemAtPath(actualAutomatFilePath, toPath: automatNewFilePath!, error: &error)
                     if let actualError = error {
                         println("Error while moving file: \(actualError)")
+                        return false
                     }
                 }
             }
@@ -534,7 +536,10 @@ class AutomatFileManager: NSObject {
         NSFileManager.defaultManager().moveItemAtPath(filePath, toPath: newPath, error: &error)
         if let actualError = error {
             println("Error while moving file: \(actualError)")
+            return false
         }
+        
+        return true
     }
     
     class func moveFile(filePath:String, to folderPath:String) -> Bool {

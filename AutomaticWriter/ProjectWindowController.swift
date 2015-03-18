@@ -67,6 +67,7 @@ class ProjectWindowController: NSWindowController, NSSplitViewDelegate, FileBrow
                 splitView.addSubview(myFileBrowserController!.view)
                 myFileBrowserController!.setRootFolder(path)
                 myFileBrowserController!.delegate = self
+                println("check the view (tableview?): \(myFileBrowserController!.myOutlineView.tableColumns)")
                 myFileBrowserController!.view.nextKeyView = myTextViewController!.myTextView
                 
                 // set text view
